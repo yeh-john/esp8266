@@ -1,0 +1,70 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <Servo.h>
+
+// Replace with your network credentials
+const char* ssid = "WIFI NAME";
+const char* password = "WIFI PASSWORD";
+
+// Create a servo object
+Servo myservo;
+
+// Define pin for the servo
+const int servoPin = D4;
+
+// Create a web server object
+ESP8266WebServer server(80);
+
+void setup() {
+  // Start serial communication for debugging
+  Serial.begin(115200);
+  
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected to WiFi");
+
+  // Initialize the servo
+  myservo.attach(servoPin);
+  myservo.write(180);  // Start at 180 degrees
+  
+  // Serve the web page
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/servo", HTTP_GET, handleServoControl);
+  
+  // Start the web server
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  // Handle client requests
+  server.handleClient();
+}
+
+// Function to serve the main web page
+void handleRoot() {
+  String html = "<html><body><h1>Servo Control</h1>";
+  html += "<button onclick=\"window.location.href='/servo'\">Move Servo</button>";
+  html += "</body></html>";
+  server.send(200, "text/html", html);
+}
+
+// Function to control the servo
+void handleServoControl() {
+  // Move the servo to 0 degrees
+  myservo.write(0);
+  delay(500);  // Wait for 0.5 seconds
+  
+  // Move the servo back to 180 degrees
+  myservo.write(180);
+  
+  // Respond to the web browser
+  String message = "Servo moved to 0 degrees, then back to 180 degrees.";
+  server.send(200, "text/plain", message);
+}
